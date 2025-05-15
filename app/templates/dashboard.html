@@ -5,29 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Universe</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
-    <nav class="app-navbar">
-        <div class="brand">AI Universe</div>
-        <div class="user-info">
-            <span id="welcome-message">Welcome, {{ username }}</span>
-            <span class="logout-btn" id="logout-link">Logout</span>
-        </div>
-    </nav>
-    
     <div class="app-container">
+        <!-- Left Sidebar Strip -->
+        <div class="sidebar-strip">
+            <div class="strip-item active" title="Chat">
+                <i class="bi bi-chat-dots"></i>
+            </div>
+            <div class="strip-item" title="Image Generation">
+                <i class="bi bi-image"></i>
+            </div>
+        </div>
+        
+        <!-- Main Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <span>Chat Hub</span>
-                <button class="new-folder-btn" title="New Folder">
-                    <i class="bi bi-folder-plus"></i>
-                </button>
+                <span>AI Universe</span>
             </div>
             
-            <div class="image-gen-btn">
-                <i class="bi bi-image"></i>
-                <span>Image Generation</span>
+            <div class="search-container">
+                <div class="search-input">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" placeholder="Search chats..." />
+                </div>
             </div>
             
             <div class="chat-history">
@@ -44,6 +47,10 @@
                         <i class="bi bi-chat-dots"></i>
                         <span>Chat 3</span>
                     </li>
+                    <li class="chat-item">
+                        <i class="bi bi-chat-dots"></i>
+                        <span>Chat 4</span>
+                    </li>
                 </ul>
             </div>
             
@@ -55,43 +62,43 @@
             </div>
         </div>
         
+        <!-- Main Chat Area -->
         <div class="chat-area">
-            <div class="chat-header">
-                <div class="user-profile">
-                    <button class="btn btn-outline-secondary btn-sm">
-                        <i class="bi bi-person"></i>
-                        User Profile
-                    </button>
-                </div>
-                
-                <div class="model-selector">
-                    <div class="model-dropdown">
-                        <div class="model-display">
-                            <span>Claude 3.5 Sonnet</span>
-                            <i class="bi bi-chevron-down"></i>
-                        </div>
-                        <div class="dropdown-content">
-                            <a href="#" data-model="claude-3-5-sonnet">Claude 3.5 Sonnet</a>
-                            <a href="#" data-model="claude">Claude</a>
-                            <a href="#" data-model="openai">OpenAI</a>
-                            <a href="#" data-model="o3-mini">O3-mini</a>
-                            <a href="#" data-model="gemini">Gemini</a>
-                        </div>
+            <!-- Center Logo -->
+            <div class="center-logo">
+                <div class="logo-placeholder">AI</div>
+                <h1>AI Universe</h1>
+            </div>
+            
+            <!-- Model Selector (Top Right) -->
+            <div class="model-selector">
+                <div class="model-dropdown">
+                    <div class="model-display">
+                        <span>Claude 3.5 Sonnet</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+                    <div class="dropdown-content">
+                        <a href="#" data-model="claude-3-5-sonnet">Claude 3.5 Sonnet</a>
+                        <a href="#" data-model="claude-3-opus">Claude 3 Opus</a>
+                        <a href="#" data-model="gpt-4">GPT-4</a>
+                        <a href="#" data-model="gpt-3.5">GPT-3.5</a>
+                        <a href="#" data-model="gemini-pro">Gemini Pro</a>
+                        <a href="#" data-model="mistral">Mistral</a>
+                        <a href="#" data-model="llama">Llama 3</a>
                     </div>
                 </div>
             </div>
             
             <div class="chat-messages" id="chat-messages">
-                <div class="message bot-message">
-                    <span>Welcome to AI Universe! How can I help you today?</span>
-                </div>
+                <!-- Messages will be populated here -->
             </div>
             
+            <!-- Chat Input -->
             <div class="chat-input-container">
                 <div class="chat-input">
-                    <input type="text" id="user-input" placeholder="Input field..." />
+                    <input type="text" id="user-input" placeholder="Ask anything..." />
                     <button class="send-button" id="send-button">
-                        <i class="bi bi-arrow-right"></i>
+                        <i class="bi bi-send"></i>
                     </button>
                 </div>
             </div>
