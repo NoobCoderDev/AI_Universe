@@ -19,6 +19,8 @@ function initSidebarStrip() {
 function initModelSelector() {
     const modelItems = document.querySelectorAll('.dropdown-content a');
     const modelDisplay = document.querySelector('.model-display span');
+    let defaultModel = 'claude-3-5-sonnet';
+    sessionStorage.setItem('selected_model', defaultModel);
     
     modelItems.forEach(item => {
         item.addEventListener('click', function(e) {
@@ -37,36 +39,30 @@ function initChatInteraction() {
     const userInput = document.getElementById('user-input');
     const chatMessages = document.getElementById('chat-messages');
     
-    // Add initial bot message if chat is empty
     if (chatMessages.children.length === 0) {
         addBotMessage("Welcome to AI Universe! How can I help you today?");
     }
     
-    // Send message on button click
     sendButton.addEventListener('click', function() {
-        sendMessage();
+        sendMessageWithPuter();
     });
     
-    // Send message on Enter key
     userInput.addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            sendMessage();
+            sendMessageWithPuter();
         }
     });
     
-    // Chat item selection
     document.querySelectorAll('.chat-item').forEach(item => {
         item.addEventListener('click', function() {
             document.querySelectorAll('.chat-item').forEach(i => {
                 i.classList.remove('active');
             });
             this.classList.add('active');
-            // In a real app, you would load this chat's history
             console.log(`Selected chat: ${this.querySelector('span').textContent}`);
         });
     });
     
-    // New chat button
     document.querySelector('.new-chat button').addEventListener('click', createNewChat);
 }
 
@@ -100,8 +96,8 @@ function createNewChat() {
     });
     newChatItem.classList.add('active');
     
-    // Reset the active chat ID
     sessionStorage.removeItem('active_chat_id');
+    sessionStorage.removeItem('conversation_history');
 }
 
 function initSearchFunctionality() {
@@ -123,16 +119,12 @@ function initSearchFunctionality() {
 }
 
 function fetchChatHistory() {
-    fetch('/api/chat_history')
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                updateChatList(data.chats);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching chat history:', error);
-        });
+    const chats = [
+        {id: 1, title: 'Chat 1', last_message: 'Welcome to AI Universe!', timestamp: '2023-05-15 14:30'},
+        {id: 2, title: 'Chat 2', last_message: 'How does AI work?', timestamp: '2023-05-14 10:15'},
+        {id: 3, title: 'Chat 3', last_message: 'Tell me about quantum computing', timestamp: '2023-05-12 16:45'},
+    ];
+    updateChatList(chats);
 }
 
 function updateChatList(chats) {
@@ -166,62 +158,123 @@ function updateChatList(chats) {
         chatList.appendChild(chatItem);
     });
     
-    // Select the first chat by default
     if (chats.length > 0) {
         const firstChat = chatList.querySelector('.chat-item');
         firstChat.classList.add('active');
-        loadChat(chats[0].id);
     }
 }
 
 function loadChat(chatId) {
-    fetch(`/chat/${chatId}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Loaded chat:', data);
-            // In a real app, you would display the chat messages
-            sessionStorage.setItem('active_chat_id', chatId);
-        })
-        .catch(error => {
-            console.error('Error loading chat:', error);
-        });
+    console.log(`Loading chat: ${chatId}`);
+    sessionStorage.setItem('active_chat_id', chatId);
 }
 
-function sendMessage() {
+function getConversationHistory() {
+    const history = sessionStorage.getItem('conversation_history');
+    return history ? JSON.parse(history) : [];
+}
+
+function saveConversationHistory(history) {
+    sessionStorage.setItem('conversation_history', JSON.stringify(history));
+}
+
+function addToConversationHistory(role, content) {
+    const history = getConversationHistory();
+    history.push({ role: role, content: content });
+    saveConversationHistory(history);
+    return history;
+}
+
+async function sendMessageWithPuter() {
     const userInput = document.getElementById('user-input');
     const message = userInput.value.trim();
     
-    if (message !== '') {
-        addUserMessage(message);
-        userInput.value = '';
+    if (message === '') return;
+    
+    addUserMessage(message);
+    userInput.value = '';
+    
+    const loadingIndicator = document.getElementById('loading-indicator');
+    loadingIndicator.style.display = 'flex';
+    
+    const conversationHistory = addToConversationHistory('user', message);
+    
+    const selectedModel = sessionStorage.getItem('selected_model') || 'claude-3-5-sonnet';
+    
+    try {
+        const botMessageElement = createEmptyBotMessage();
         
-        const selectedModel = sessionStorage.getItem('selected_model') || 'claude-3-5-sonnet';
+        const supportsStreaming = ['claude-3-5-sonnet', 'claude-3-7-sonnet', 'gpt-4', 'gpt-3.5-turbo'].includes(selectedModel);
         
-        // Make API request to send message
-        fetch('/api/send_message', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                message: message,
+        const formattedMessages = formatMessagesForPuter(conversationHistory);
+        
+        if (supportsStreaming) {
+            const response = await puter.ai.chat(formattedMessages, {
                 model: selectedModel,
-                chat_id: sessionStorage.getItem('active_chat_id')
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                addBotMessage(data.response);
-            } else {
-                addBotMessage('Sorry, there was an error processing your request.');
+                stream: true
+            });
+            
+            let fullResponse = '';
+            
+            const streamingIndicator = document.createElement('span');
+            streamingIndicator.className = 'streaming-indicator';
+            streamingIndicator.textContent = '...';
+            botMessageElement.querySelector('span').appendChild(streamingIndicator);
+            
+            for await (const part of response) {
+                if (part?.text) {
+                    fullResponse += part.text;
+                    botMessageElement.querySelector('span').textContent = fullResponse;
+                    botMessageElement.querySelector('span').appendChild(streamingIndicator);
+                    
+                    const chatMessages = document.getElementById('chat-messages');
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }
             }
-        })
-        .catch(error => {
-            console.error('Error sending message:', error);
-            addBotMessage('Sorry, there was an error communicating with the server.');
-        });
+            
+            botMessageElement.querySelector('span').textContent = fullResponse;
+            addToConversationHistory('assistant', fullResponse);
+        } else {
+            const response = await puter.ai.chat(formattedMessages, {
+                model: selectedModel
+            });
+            
+            const responseText = response.message.content[0].text;
+            botMessageElement.querySelector('span').textContent = responseText;
+            addToConversationHistory('assistant', responseText);
+        }
+    } catch (error) {
+        console.error('Error from LLM API:', error);
+        addBotMessage('Sorry, there was an error communicating with the AI model. Please try again.');
+    } finally {
+        loadingIndicator.style.display = 'none';
     }
+}
+
+function formatMessagesForPuter(conversationHistory) {
+    if (conversationHistory.length === 1) {
+        return conversationHistory[0].content;
+    }
+    
+    return conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content
+    }));
+}
+
+function createEmptyBotMessage() {
+    const chatMessages = document.getElementById('chat-messages');
+    const messageElement = document.createElement('div');
+    messageElement.className = 'message bot-message';
+    const textSpan = document.createElement('span');
+    textSpan.textContent = '';
+    messageElement.appendChild(textSpan);
+    chatMessages.appendChild(messageElement);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    document.querySelector('.center-logo').style.display = 'none';
+    
+    return messageElement;
 }
 
 function addUserMessage(message) {
@@ -234,7 +287,6 @@ function addUserMessage(message) {
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    // Hide the center logo when messages are present
     document.querySelector('.center-logo').style.display = 'none';
 }
 
@@ -248,6 +300,5 @@ function addBotMessage(message) {
     chatMessages.appendChild(messageElement);
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    // Hide the center logo when messages are present
     document.querySelector('.center-logo').style.display = 'none';
 }
