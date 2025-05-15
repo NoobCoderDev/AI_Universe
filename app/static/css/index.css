@@ -1,0 +1,10 @@
+body {
+      padding-top: 2rem;
+  }
+  
+  .hero {
+      text-align: center;
+      padding: 3rem 0;
+      background-color: #f8f9fa;
+      margin-bottom: 2rem;
+  }
