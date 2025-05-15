@@ -33,6 +33,9 @@ def create_app():
         from .routes import user_routes
         app.register_blueprint(user_routes.bp)
         
+        from .routes import chat_routes
+        app.register_blueprint(chat_routes.chat_bp)
+        
         logger.info("Application routes registered.")
 
     return app
